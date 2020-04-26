@@ -10,7 +10,8 @@ except ImportError:
     from urllib3 import urlopen, Request
     pass
 
-from pandas.compat import StringIO
+# from pandas.compat import StringIO
+from io import StringIO
 from tushare.stock import cons as ct
 
 from DyCommon.DyCommon import *

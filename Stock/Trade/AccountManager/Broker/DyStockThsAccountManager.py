@@ -14,10 +14,10 @@ class DyStockThsAccountManager(DyStockAccountManager):
     headerNameMap = {'capital': {'availCash': '可用金额'},
                      'position': {'code': '证券代码',
                                   'name': '证券名称',
-                                  'totalVolume': '股票余额',
-                                  'availVolume': '可用余额',
-                                  'price': '市价',
-                                  'cost': '成本价'
+                                  'totalVolume': '持仓数量',
+                                  'availVolume': '可用数量',
+                                  'price': '当前价',
+                                  'cost': '参考成本价'
                                   },
                      'curEntrust': {'code': '证券代码',
                                     'price': '委托价格',

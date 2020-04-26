@@ -6,6 +6,7 @@ import sys
 import time
 import io
 import pandas as pd
+from pywinauto import win32defines
 
 from . import pop_dialog_handler
 
@@ -78,7 +79,9 @@ class Copy(BaseStrategy):
 
     def _get(self, control_id):
         grid = self._get_grid(control_id)
-        grid.type_keys("^A^C")
+        # grid.type_keys("^A^C")
+        grid.post_message(win32defines.WM_COMMAND, 0xE122, 0)
+        self._trader.wait(0.1)
         content = self._get_clipboard_data()
         return self._format_grid_data(content)
 

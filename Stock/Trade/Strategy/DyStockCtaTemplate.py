@@ -79,7 +79,7 @@ class DyStockCtaTemplate(object):
             @state: 策略状态
             @strategyParam: 策略参数。 实盘时是None；回测时，会从策略窗口生成策略参数
         """
-        self._ctaEngine = ctaEngine
+        self.ctaEngine = ctaEngine
         self._info = info
         self._state = state
         self._strategyParam = strategyParam
@@ -120,7 +120,7 @@ class DyStockCtaTemplate(object):
             载入前一交易日策略的收盘保存数据
         """
         # 从磁盘载入策略收盘保存数据
-        savedData = self._ctaEngine.loadOnClose(self._curTDay, self.__class__)
+        savedData = self.ctaEngine.loadOnClose(self._curTDay, self.__class__)
         if not savedData:
             return
 
@@ -285,7 +285,7 @@ class DyStockCtaTemplate(object):
         assert 'pos' not in self._curSavedData # prevent strategy using 'pos' which is reserved by DY system.
         self._curSavedData['pos'] = positions
 
-        self._ctaEngine.saveOnClose(self._curTDay, self.__class__, self._curSavedData)
+        self.ctaEngine.saveOnClose(self._curTDay, self.__class__, self._curSavedData)
 
     @classmethod
     def prepare(cls, date, dataEngine, info, codes=None, errorDataEngine=None, backTestingContext=None):
@@ -308,7 +308,7 @@ class DyStockCtaTemplate(object):
         return {}
     
     def getBuyVol(self, cash, code, price):
-        return self._ctaEngine.getBuyVol(cash, code, price)
+        return self.ctaEngine.getBuyVol(cash, code, price)
 
     @classmethod
     def value2Str(cls, value):
@@ -384,7 +384,7 @@ class DyStockCtaTemplate(object):
         if not self.__checkBuy(tick):
             return None
 
-        entrust = self._ctaEngine.buy(self.__class__, tick, volume, self.__convert2SignalInfo(signalDetails), price)
+        entrust = self.ctaEngine.buy(self.__class__, tick, volume, self.__convert2SignalInfo(signalDetails), price)
         if entrust is not None:
             self._curEntrusts[entrust.dyEntrustId] = entrust
 
@@ -392,7 +392,7 @@ class DyStockCtaTemplate(object):
 
         return entrust
     
-    def sell(self, tick, volume, sellReason=DyStockSellReason.strategy, signalDetails=None, price=None):
+    def sell(self, tick, volume, sellReason=DyStockSellReason.strategy, signalDetails=None, price=None,force=False):
         """
             @signalDetails: [], 信号明细，回测时会转换成信号信息
         """
@@ -400,10 +400,10 @@ class DyStockCtaTemplate(object):
         self.putStockMarketMonitorUiEvent(signalDetails=None if signalDetails is None else [signalDetails])
 
         # 二次保护，防止卖出其他策略的仓位
-        if self.getCodePosAvailVolume(tick.code) < volume:
+        if not force and self.getCodePosAvailVolume(tick.code) < volume:
             return None
 
-        entrust = self._ctaEngine.sell(self.__class__, tick, volume, sellReason, self.__convert2SignalInfo(signalDetails), price)
+        entrust = self.ctaEngine.sell(self.__class__, tick, volume, sellReason, self.__convert2SignalInfo(signalDetails), price)
         if entrust is not None:
             self._curEntrusts[entrust.dyEntrustId] = entrust
 
@@ -422,7 +422,7 @@ class DyStockCtaTemplate(object):
             for _, entrusts in self._curNotDoneEntrusts.items():
                 for _, entrust in entrusts.items():
                     # 撤销委托
-                    ret = self._ctaEngine.cancel(self.__class__, entrust) and ret
+                    ret = self.ctaEngine.cancel(self.__class__, entrust) and ret
 
         else:
             entrusts = self._curNotDoneEntrusts.get(code)
@@ -432,7 +432,7 @@ class DyStockCtaTemplate(object):
                 ret = True
                 for _, entrust in entrusts.items():
                     # 撤销委托
-                    ret = self._ctaEngine.cancel(self.__class__, entrust) and ret
+                    ret = self.ctaEngine.cancel(self.__class__, entrust) and ret
 
         return ret
 
@@ -449,7 +449,7 @@ class DyStockCtaTemplate(object):
             return None
 
         # close position
-        entrust = self._ctaEngine.closePos(self.__class__, tick, volume, sellReason, self.__convert2SignalInfo(signalDetails))
+        entrust = self.ctaEngine.closePos(self.__class__, tick, volume, sellReason, self.__convert2SignalInfo(signalDetails))
         if entrust is not None:
             self._curEntrusts[entrust.dyEntrustId] = entrust
 
@@ -479,7 +479,7 @@ class DyStockCtaTemplate(object):
         if not self.__checkBuy(tick):
             return None
 
-        entrust = self._ctaEngine.buyByRatio(self.__class__, tick, ratio, ratioMode, self.__convert2SignalInfo(signalDetails))
+        entrust = self.ctaEngine.buyByRatio(self.__class__, tick, ratio, ratioMode, self.__convert2SignalInfo(signalDetails))
         if entrust is not None:
             self._curEntrusts[entrust.dyEntrustId] = entrust
 
@@ -496,7 +496,7 @@ class DyStockCtaTemplate(object):
         # 不管卖出成功与否，首先推送信号明细到UI
         self.putStockMarketMonitorUiEvent(signalDetails=None if signalDetails is None else [signalDetails])
 
-        entrust = self._ctaEngine.sellByRatio(self, tick, ratio, ratioMode, sellReason, self.__convert2SignalInfo(signalDetails))
+        entrust = self.ctaEngine.sellByRatio(self, tick, ratio, ratioMode, sellReason, self.__convert2SignalInfo(signalDetails))
         if entrust is not None:
             self._curEntrusts[entrust.dyEntrustId] = entrust
 
@@ -510,20 +510,20 @@ class DyStockCtaTemplate(object):
             @type: 事件类型
             @data: 事件数据，一般为dict
         """
-        self._ctaEngine.putEvent(type, data)
+        self.ctaEngine.putEvent(type, data)
 
     def putStockMarketMonitorUiEvent(self, data=None, newData=False, op=None, signalDetails=None, datetime_=None):
         """
             参数说明参照DyStockCtaEngine
             @datetime_: 行情数据时有效
         """
-        self._ctaEngine.putStockMarketMonitorUiEvent(self.__class__, data, newData, op, signalDetails, datetime_)
+        self.ctaEngine.putStockMarketMonitorUiEvent(self.__class__, data, newData, op, signalDetails, datetime_)
 
     def putStockMarketStrengthUpdateEvent(self, time, marketStrengthInfo):
         if time is None:
             return
 
-        self._ctaEngine.putStockMarketStrengthUpdateEvent(self.__class__, time, marketStrengthInfo.copy())
+        self.ctaEngine.putStockMarketStrengthUpdateEvent(self.__class__, time, marketStrengthInfo.copy())
 
     def _callPrepare(self, date, codes, isBackTesting):
         """
@@ -531,7 +531,7 @@ class DyStockCtaTemplate(object):
         """
         if self._newPrepareInterface is None:
             try:
-                data = self.prepare(date, self._ctaEngine.dataEngine, self._info, codes, self._ctaEngine.errorDataEngine, self._strategyParam, isBackTesting)
+                data = self.prepare(date, self.ctaEngine.dataEngine, self._info, codes, self.ctaEngine.errorDataEngine, self._strategyParam, isBackTesting)
                 
                 self._newPrepareInterface = False
 
@@ -539,16 +539,16 @@ class DyStockCtaTemplate(object):
                 print(warningStr)
             except TypeError:
                 # new @parepare interface
-                data = self.prepare(date, self._ctaEngine.dataEngine, self._info, codes, self._ctaEngine.errorDataEngine, self._ctaEngine.backTestingContext)
+                data = self.prepare(date, self.ctaEngine.dataEngine, self._info, codes, self.ctaEngine.errorDataEngine, self.ctaEngine.backTestingContext)
 
                 self._newPrepareInterface = True
 
             return data
 
         if self._newPrepareInterface:
-            data = self.prepare(date, self._ctaEngine.dataEngine, self._info, codes, self._ctaEngine.errorDataEngine, self._ctaEngine.backTestingContext)
+            data = self.prepare(date, self.ctaEngine.dataEngine, self._info, codes, self.ctaEngine.errorDataEngine, self.ctaEngine.backTestingContext)
         else:
-            data = self.prepare(date, self._ctaEngine.dataEngine, self._info, codes, self._ctaEngine.errorDataEngine, self._strategyParam, isBackTesting)
+            data = self.prepare(date, self.ctaEngine.dataEngine, self._info, codes, self.ctaEngine.errorDataEngine, self._strategyParam, isBackTesting)
 
         return data
 
@@ -558,7 +558,7 @@ class DyStockCtaTemplate(object):
         """
         if self._newPreparePosInterface is None:
             try:
-                data = self.preparePos(date, self._ctaEngine.dataEngine, self._info, posCodes, self._ctaEngine.errorDataEngine, self._strategyParam, isBackTesting)
+                data = self.preparePos(date, self.ctaEngine.dataEngine, self._info, posCodes, self.ctaEngine.errorDataEngine, self._strategyParam, isBackTesting)
                 
                 self._newPreparePosInterface = False
 
@@ -566,16 +566,16 @@ class DyStockCtaTemplate(object):
                 print(warningStr)
             except TypeError:
                 # new @pareparePos interface
-                data = self.preparePos(date, self._ctaEngine.dataEngine, self._info, posCodes, self._ctaEngine.errorDataEngine, self._ctaEngine.backTestingContext)
+                data = self.preparePos(date, self.ctaEngine.dataEngine, self._info, posCodes, self.ctaEngine.errorDataEngine, self.ctaEngine.backTestingContext)
 
                 self._newPreparePosInterface = True
 
             return data
 
         if self._newPreparePosInterface:
-            data = self.preparePos(date, self._ctaEngine.dataEngine, self._info, posCodes, self._ctaEngine.errorDataEngine, self._ctaEngine.backTestingContext)
+            data = self.preparePos(date, self.ctaEngine.dataEngine, self._info, posCodes, self.ctaEngine.errorDataEngine, self.ctaEngine.backTestingContext)
         else:
-            data = self.preparePos(date, self._ctaEngine.dataEngine, self._info, posCodes, self._ctaEngine.errorDataEngine, self._strategyParam, isBackTesting)
+            data = self.preparePos(date, self.ctaEngine.dataEngine, self._info, posCodes, self.ctaEngine.errorDataEngine, self._strategyParam, isBackTesting)
 
         return data
 
@@ -591,14 +591,14 @@ class DyStockCtaTemplate(object):
             self._info.print('载入策略的准备数据...')
 
         # load from JSON file
-        data = self._ctaEngine.loadPreparedData(date, self.__class__)
+        data = self.ctaEngine.loadPreparedData(date, self.__class__)
         if data is None:
             if not isBackTesting:
                 self._info.print('策略的准备数据载入失败', DyLogData.warning)
                 self._info.print('开始实时准备策略开盘前数据...')
 
             # 前一日
-            date = self._ctaEngine.tDaysOffsetInDb(DyTime.getDateStr(date, -1))
+            date = self.ctaEngine.tDaysOffsetInDb(DyTime.getDateStr(date, -1))
             if date is None: # if no enough data, we'll report an error. 2018.06.11
                 self._info.print('没有足够的历史数据，策略的准备数据载入失败', DyLogData.error)
                 return None
@@ -634,14 +634,14 @@ class DyStockCtaTemplate(object):
             self._info.print('载入策略的持仓准备数据...')
 
         # load from JSON file
-        data = self._ctaEngine.loadPreparedPosData(date, self.__class__)
+        data = self.ctaEngine.loadPreparedPosData(date, self.__class__)
         if data is None:
             if not isBackTesting:
                 self._info.print('策略的持仓准备数据载入失败', DyLogData.warning)
                 self._info.print('开始实时准备策略开盘前持仓数据...')
 
             # 前一日
-            date = self._ctaEngine.tDaysOffsetInDb(DyTime.getDateStr(date, -1))
+            date = self.ctaEngine.tDaysOffsetInDb(DyTime.getDateStr(date, -1))
 
             # prepare
             data = self._callPreparePos(date, posCodes, isBackTesting)
@@ -831,11 +831,11 @@ class DyStockCtaTemplate(object):
         """
             获取指定股票的持仓占比券商账户总资产(%)
         """
-        codePosMarketValue = self._ctaEngine.getCurCodePosMarketValue(self.__class__, code)
+        codePosMarketValue = self.ctaEngine.getCurCodePosMarketValue(self.__class__, code)
         if codePosMarketValue is None:
             return None
 
-        capital = self._ctaEngine.getCurCapital(self.__class__)
+        capital = self.ctaEngine.getCurCapital(self.__class__)
         if capital is None or capital <= 0:
             return None
 
@@ -849,7 +849,7 @@ class DyStockCtaTemplate(object):
         if cash is None:
             return None
 
-        capital = self._ctaEngine.getCurCapital(self.__class__)
+        capital = self.ctaEngine.getCurCapital(self.__class__)
         if capital is None or capital <= 0:
             return None
 
@@ -1051,7 +1051,7 @@ class DyStockCtaTemplate(object):
             策略没有固定分配好的资金。采用共享账户资金池的方式。
             这里并不关心策略的运行状态，只是返回对应账户的数据
         """
-        return self._ctaEngine.getCurCash(self.__class__)
+        return self.ctaEngine.getCurCash(self.__class__)
 
     @property
     def state(self):
@@ -1066,23 +1066,23 @@ class DyStockCtaTemplate(object):
 
     @property
     def marketTime(self):
-        return self._ctaEngine.marketTime
+        return self.ctaEngine.marketTime
 
     @property
     def marketDatetime(self):
-        return self._ctaEngine.marketDatetime
+        return self.ctaEngine.marketDatetime
 
     @property
     def indexTick(self):
-        return self._ctaEngine.indexTick
+        return self.ctaEngine.indexTick
 
     @property
     def etf300Tick(self):
-        return self._ctaEngine.etf300Tick
+        return self.ctaEngine.etf300Tick
 
     @property
     def etf500Tick(self):
-        return self._ctaEngine.etf500Tick
+        return self.ctaEngine.etf500Tick
 
     def getEtfTick(self, code):
         if code == DyStockCommon.etf300:

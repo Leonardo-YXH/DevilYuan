@@ -62,7 +62,8 @@ class ThsTrader(UiTrader):
 
     @UiTrader.retryWrapper
     def _logout(self, oneKeyHangUp=False):
-        return self._uiClient.exit()
+        # return self._uiClient.exit()
+        return False
 
     def getBalance(self, parse=True, fromBroker=True):
         """
